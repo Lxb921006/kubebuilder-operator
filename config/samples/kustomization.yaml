@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- buildcrd_v1_app.template
+#+kubebuilder:scaffold:manifestskustomizesamples

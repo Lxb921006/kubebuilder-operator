@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{.ObjectMeta.Name}}-deployment
+  namespace: {{.ObjectMeta.Namespace}}
+  labels:
+    app: {{.ObjectMeta.Name}}-app
+spec:
+  replicas: {{.Spec.Replicas}}
+  selector:
+    matchLabels:
+      app: {{.ObjectMeta.Name}}-app
+  template:
+    metadata:
+      labels:
+        app: {{.ObjectMeta.Name}}-app
+    spec:
+      containers:
+        - name: {{.ObjectMeta.Name}}-pod
+          image: {{.Spec.Image}}
+          ports:
+            - containerPort: 80
