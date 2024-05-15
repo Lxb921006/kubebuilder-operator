@@ -18,6 +18,20 @@ resources:
   path: github.com/Lxb921006/kubebuild-go/api/v1
   version: v1
   webhooks:
+    conversion: true
+    defaulting: true
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: k8s.example.io
+  group: buildcrd
+  kind: App
+  path: github.com/Lxb921006/kubebuild-go/api/v2
+  version: v2
+  webhooks:
+    conversion: true
     defaulting: true
     validation: true
     webhookVersion: v1

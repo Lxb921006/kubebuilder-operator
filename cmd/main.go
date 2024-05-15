@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"os"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -37,6 +38,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	buildcrdv1 "github.com/Lxb921006/kubebuild-go/api/v1"
+	buildcrdv2 "github.com/Lxb921006/kubebuild-go/api/v2"
 	"github.com/Lxb921006/kubebuild-go/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
@@ -50,6 +52,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(buildcrdv1.AddToScheme(scheme))
+	utilruntime.Must(buildcrdv2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -137,13 +140,18 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "App")
 		os.Exit(1)
 	}
+
+	if err = (&buildcrdv2.App{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "App")
+		os.Exit(1)
+	}
+
 	if err = (&buildcrdv1.App{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "App")
 		os.Exit(1)
 	}
 
 	//+kubebuilder:scaffold:builder
-
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)

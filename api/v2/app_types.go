@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package v2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,6 +31,7 @@ type AppSpec struct {
 	// Foo is an example field of App. Edit app_types.go to remove/update
 	EnableIngress bool   `json:"enable_ingress,omitempty"`
 	EnableService bool   `json:"enable_service"`
+	EnablePod     bool   `json:"enable_pod"`
 	Replicas      int32  `json:"replicas"`
 	Image         string `json:"image"`
 }
@@ -39,12 +40,12 @@ type AppSpec struct {
 type AppStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:storageversion
 
 // App is the Schema for the apps API
 type App struct {

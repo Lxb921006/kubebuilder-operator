@@ -2,17 +2,32 @@ package resource
 
 import (
 	"bytes"
-	"fmt"
 	crdAppV1 "github.com/Lxb921006/kubebuild-go/api/v1"
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
+	netV1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"os"
+	"path/filepath"
 	"text/template"
 )
 
 func parseYaml(templateName string, app *crdAppV1.App) ([]byte, error) {
-	file, err := os.ReadFile(fmt.Sprintf("internal/controller/template/%s.yaml", templateName))
+	dir, err := os.ReadDir("/template")
+	if err != nil {
+		return []byte{}, err
+	}
+
+	var yamlFile string
+
+	for _, v := range dir {
+		if v.Name() == templateName+".yaml" {
+			yamlFile = filepath.Join("/template", v.Name())
+			break
+		}
+	}
+
+	file, err := os.ReadFile(yamlFile)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -58,5 +73,21 @@ func NewService(app *crdAppV1.App) (*coreV1.Service, error) {
 	}
 
 	return svc, nil
+
+}
+
+func NewIngress(app *crdAppV1.App) (*netV1.Ingress, error) {
+	var igs = new(netV1.Ingress)
+
+	b, err := parseYaml("ingress", app)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = yaml.Unmarshal(b, igs); err != nil {
+		return nil, err
+	}
+
+	return igs, nil
 
 }

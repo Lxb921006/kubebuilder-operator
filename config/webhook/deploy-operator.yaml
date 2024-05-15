@@ -16,7 +16,7 @@ spec:
       serviceAccountName: controller-manager
       containers:
         - name: webhook
-          image: 19921006/operator:v6
+          image: 19921006/operator:v9
           ports:
             - containerPort: 9443
           livenessProbe:

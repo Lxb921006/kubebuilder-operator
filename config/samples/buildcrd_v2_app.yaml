@@ -1,4 +1,4 @@
-apiVersion: buildcrd.k8s.example.io/v1
+apiVersion: buildcrd.k8s.example.io/v2
 kind: App
 metadata:
   labels:
@@ -8,6 +8,7 @@ metadata:
   namespace: web
 spec:
   # TODO(user): Add fields here
-  enable_service: true
-  replicas: 2
-  image: nginx:latest
+  enable_pod: false 
+  # enable_service: false 
+  # image: nginx:latest
+  # replicas: 2

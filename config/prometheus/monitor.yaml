@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/part-of: kubebuild-go
     app.kubernetes.io/managed-by: kustomize
   name: controller-manager-metrics-monitor
-  namespace: system
+  namespace: web
 spec:
   endpoints:
     - path: /metrics

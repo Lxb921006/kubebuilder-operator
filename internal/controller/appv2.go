@@ -1,19 +1,3 @@
-/*
-Copyright 2024.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package controller
 
 import (
@@ -34,62 +18,40 @@ import (
 	"time"
 )
 
-// AppReconciler reconciles a App object
-type AppReconciler struct {
+type AppV2Reconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=buildcrd.k8s.example.io,resources=apps,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=buildcrd.k8s.example.io,resources=apps/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=buildcrd.k8s.example.io,resources=apps/finalizers,verbs=update
-
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the App object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.2/pkg/reconcile
-func (r *AppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *AppV2Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logCtr := log.FromContext(ctx)
-
-	// TODO(user): your logic here
-	appV1 := &buildcrdv1.App{}
-
-	if err := r.Get(ctx, req.NamespacedName, appV1); err != nil {
+	app := &buildcrdv1.App{}
+	if err := r.Get(ctx, req.NamespacedName, app); err != nil {
 		if errors.IsNotFound(err) {
-			logCtr.Error(err, "fail to get app v1 resource")
+			// CR不再存在，可能是被删除了
 			return ctrl.Result{}, nil
 		}
+		logCtr.Error(err, "fail to get App resource")
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileDeployment(ctx, appV1, logCtr); err != nil {
+	if err := r.reconcileDeployment(ctx, app, logCtr); err != nil {
 		return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 	}
 
-	if err := r.reconcileService(ctx, appV1, logCtr); err != nil {
+	if err := r.reconcileService(ctx, app, logCtr); err != nil {
 		return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 	}
-
-	// 需要根据v2版本的enable_log字段判断要不要走这个方法
-	enablePod, found := appV1.Annotations["apps.v2.buildcrd.k8s.example.io/enable_pod"]
-	if found {
-		if enablePod == "true" {
-			if err := r.reconcilePodsStatus(ctx, appV1, logCtr); err != nil {
-				return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
-			}
-		}
+	
+	if err := r.reconcilePodsStatus(ctx, app, logCtr); err != nil {
+		return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
 	}
 
 	return ctrl.Result{}, nil
 }
 
 // deployment监测
-func (r *AppReconciler) reconcileDeployment(ctx context.Context, app *buildcrdv1.App, logCtr logr.Logger) error {
+func (r *AppV2Reconciler) reconcileDeployment(ctx context.Context, app *buildcrdv1.App, logCtr logr.Logger) error {
 	foundDep := &appsV1.Deployment{}
 	err := r.Get(ctx, types.NamespacedName{Name: app.Name + "-deployment", Namespace: app.Namespace}, foundDep)
 	if err != nil && errors.IsNotFound(err) {
@@ -127,7 +89,7 @@ func (r *AppReconciler) reconcileDeployment(ctx context.Context, app *buildcrdv1
 }
 
 // service监测
-func (r *AppReconciler) reconcileService(ctx context.Context, app *buildcrdv1.App, logCtr logr.Logger) error {
+func (r *AppV2Reconciler) reconcileService(ctx context.Context, app *buildcrdv1.App, logCtr logr.Logger) error {
 	foundSvc := &coreV1.Service{}
 	err := r.Get(ctx, types.NamespacedName{Name: app.Name + "-svc", Namespace: app.Namespace}, foundSvc)
 	if err != nil && errors.IsNotFound(err) {
@@ -162,19 +124,18 @@ func (r *AppReconciler) reconcileService(ctx context.Context, app *buildcrdv1.Ap
 }
 
 // pods存活监测
-func (r *AppReconciler) reconcilePodsStatus(ctx context.Context, app *buildcrdv1.App, logCtr logr.Logger) error {
+func (r *AppV2Reconciler) reconcilePodsStatus(ctx context.Context, app *buildcrdv1.App, logCtr logr.Logger) error {
 	pods := new(coreV1.PodList)
-	if err := r.List(ctx, pods, client.InNamespace(app.Namespace), client.MatchingLabels{"app": app.Name + "-app"}); err != nil {
-		logCtr.Error(err, "fail to get pod list.")
+	if err := r.List(ctx, pods, client.InNamespace(app.Namespace), client.MatchingFields{"metadata.annotations.generateName": "app-sample-deployment-7dffccdb9f-"}); err != nil {
 		return err
 	}
 
-	var ds = new(int64)
+	var ds *int64
 	*ds = 10
 
 	for _, v := range pods.Items {
-		fmt.Println(v.Name, v.Status.Phase)
 		if v.Status.Phase == coreV1.PodFailed {
+			logCtr.Info(v.Name, v.Status.Phase)
 			dps := client.DeleteOptions{
 				GracePeriodSeconds: ds,
 			}
@@ -188,7 +149,7 @@ func (r *AppReconciler) reconcilePodsStatus(ctx context.Context, app *buildcrdv1
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *AppReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *AppV2Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&buildcrdv1.App{}).
 		Owns(&appsV1.Deployment{}).

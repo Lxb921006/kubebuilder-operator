@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package v2
 
 import (
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -39,13 +39,13 @@ func (r *App) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-//+kubebuilder:webhook:path=/mutate-buildcrd-k8s-example-io-v1-app,mutating=true,failurePolicy=fail,sideEffects=None,groups=buildcrd.k8s.example.io,resources=apps,verbs=create;update,versions=v1,name=mapp.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-buildcrd-k8s-example-io-v2-app,mutating=true,failurePolicy=fail,sideEffects=None,groups=buildcrd.k8s.example.io,resources=apps,verbs=create;update,versions=v2,name=m2app.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &App{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *App) Default() {
-	applog.Info("v1", "name", r.Name)
+	applog.Info("v2", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
 	if r.Spec.Replicas == 0 {
@@ -58,7 +58,7 @@ func (r *App) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-buildcrd-k8s-example-io-v1-app,mutating=false,failurePolicy=fail,sideEffects=None,groups=buildcrd.k8s.example.io,resources=apps,verbs=create;update,versions=v1,name=vapp.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-buildcrd-k8s-example-io-v2-app,mutating=false,failurePolicy=fail,sideEffects=None,groups=buildcrd.k8s.example.io,resources=apps,verbs=create;update,versions=v2,name=v2app.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &App{}
 
